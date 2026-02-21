@@ -1,17 +1,32 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { 
   Home, PlusCircle, BarChart2, Users, AlertTriangle, 
-  CheckCircle, Activity, ChevronRight, Save, Trash2, Edit2, 
-  X, UserPlus, Calendar, Clock, ArrowRight, ShieldAlert,
-  Dumbbell, History as HistoryIcon, ChevronDown, ChevronUp,
-  AlignLeft, Edit3, Check, Filter, Target, Medal, Pin,
-  ArrowDownUp, BatteryWarning
+  CheckCircle, Activity, Trash2, ShieldAlert, History as HistoryIcon
 } from 'lucide-react';
 
 // --- FIREBASE IMPORTS ---
 import { initializeApp } from 'firebase/app';
-import { getAuth, signInWithCustomToken, signInAnonymously, onAuthStateChanged } from 'firebase/auth';
-import { getFirestore, collection, onSnapshot, doc, setDoc, deleteDoc } from 'firebase/firestore';
+import { 
+  getAuth, 
+  signInWithCustomToken, 
+  signInAnonymously, 
+  onAuthStateChanged
+} from 'firebase/auth';
+import type { User } from 'firebase/auth';
+
+import { 
+  getFirestore, 
+  collection, 
+  onSnapshot, 
+  doc, 
+  setDoc, 
+  deleteDoc
+} from 'firebase/firestore';
+import type {
+  QuerySnapshot,
+  DocumentData,
+  QueryDocumentSnapshot
+} from 'firebase/firestore';
 
 // --- KONFIGURACJA FIREBASE ---
 declare const __firebase_config: string;
@@ -313,14 +328,13 @@ const NewTraining = ({ athletes, dbAddSession, setView }: any) => {
 const Roster = ({ athletes, dbAddAthlete, dbDeleteAthlete }: any) => {
   const [name, setName] = useState('');
   const [profile, setProfile] = useState<Profile>('PRO');
-  const [age, setAge] = useState(14);
   const [height, setHeight] = useState(170);
 
   const handleAdd = async () => {
     if (!name) return;
     await dbAddAthlete({
       id: Date.now().toString(),
-      firstName: name, profile, age, joinDate: new Date().toISOString().split('T')[0],
+      firstName: name, profile, age: 14, joinDate: new Date().toISOString().split('T')[0],
       measurements: [{ id: 'init', date: new Date().toISOString().split('T')[0], height, weight: 60 }],
       records: [], focusPoints: []
     });
@@ -352,8 +366,7 @@ const Roster = ({ athletes, dbAddAthlete, dbDeleteAthlete }: any) => {
 
 export default function App() {
   const [view, setView] = useState<'dashboard' | 'new' | 'history' | 'analytics' | 'roster'>('dashboard');
-  const [selectedAthleteId, setSelectedAthleteId] = useState<string | null>(null);
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [isLoaded, setIsLoaded] = useState(false);
   const [athletes, setAthletes] = useState<Athlete[]>([]);
   const [sessions, setSessions] = useState<Session[]>([]);
@@ -375,7 +388,7 @@ export default function App() {
       } catch (e) { console.error(e); }
     };
     initAuth();
-    return onAuthStateChanged(auth, setUser);
+    return onAuthStateChanged(auth, (u) => setUser(u));
   }, []);
 
   // 2. Synchronizacja Firestore
@@ -384,14 +397,14 @@ export default function App() {
     const athletesRef = collection(db, 'artifacts', sanitizedAppId, 'public', 'data', 'athletes');
     const sessionsRef = collection(db, 'artifacts', sanitizedAppId, 'public', 'data', 'sessions');
 
-    const unsubAthletes = onSnapshot(athletesRef, (snap) => {
-      setAthletes(snap.docs.map(d => d.data() as Athlete));
+    const unsubAthletes = onSnapshot(athletesRef, (snap: QuerySnapshot<DocumentData>) => {
+      setAthletes(snap.docs.map((d: QueryDocumentSnapshot<DocumentData>) => d.data() as Athlete));
       setIsLoaded(true);
-    }, (err) => console.error(err));
+    }, (err: Error) => console.error(err));
 
-    const unsubSessions = onSnapshot(sessionsRef, (snap) => {
-      setSessions(snap.docs.map(d => d.data() as Session));
-    }, (err) => console.error(err));
+    const unsubSessions = onSnapshot(sessionsRef, (snap: QuerySnapshot<DocumentData>) => {
+      setSessions(snap.docs.map((d: QueryDocumentSnapshot<DocumentData>) => d.data() as Session));
+    }, (err: Error) => console.error(err));
 
     return () => { unsubAthletes(); unsubSessions(); };
   }, [user, sanitizedAppId]);
@@ -412,7 +425,13 @@ export default function App() {
   };
 
   if (!isLoaded || !user) {
-    return <div className="min-h-screen bg-slate-950 flex items-center justify-center text-white font-black animate-pulse">TRI POP PRO...</div>;
+    return (
+      <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center text-white font-black animate-pulse">
+        <Activity className="w-12 h-12 text-[#E11D48] mb-4 animate-spin" />
+        <h1 className="text-2xl tracking-tighter"><span className="text-[#E11D48]">TRI</span> POP PRO</h1>
+        <p className="mt-4 text-xs text-slate-500 font-medium">ŁĄCZENIE Z CHMURĄ...</p>
+      </div>
+    );
   }
 
   const navItems = [
@@ -425,6 +444,7 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-200 pb-20 md:pb-0 md:pl-64">
+      {/* Sidebar Desktop */}
       <aside className="hidden md:flex flex-col fixed inset-y-0 left-0 w-64 bg-slate-950 border-r border-slate-800 p-6">
         <h1 className="text-xl font-black text-white mb-8 tracking-tighter"><span className="text-[#E11D48]">TRI</span> POP PRO</h1>
         <nav className="space-y-2">
@@ -440,10 +460,12 @@ export default function App() {
         </nav>
       </aside>
 
+      {/* Main Content */}
       <main className="p-4 md:p-8 max-w-7xl mx-auto">
-        {view === 'dashboard' && <Dashboard athletes={athletes} sessions={sessions} setView={setView} setSelectedAthlete={setSelectedAthleteId} />}
+        {view === 'dashboard' && <Dashboard athletes={athletes} sessions={sessions} setView={setView} setSelectedAthlete={() => {}} />}
         {view === 'new' && <NewTraining athletes={athletes} dbAddSession={dbAddSession} setView={setView} />}
         {view === 'roster' && <Roster athletes={athletes} dbAddAthlete={dbAddAthlete} dbDeleteAthlete={dbDeleteAthlete} />}
+        
         {(view === 'history' || view === 'analytics') && (
            <div className="text-center py-20 text-slate-500 border border-dashed border-slate-800 rounded-2xl">
               <Activity className="w-12 h-12 mx-auto mb-4 opacity-20" />
@@ -453,6 +475,7 @@ export default function App() {
         )}
       </main>
 
+      {/* Bottom Nav Mobile */}
       <nav className="md:hidden fixed bottom-0 inset-x-0 bg-slate-950/90 backdrop-blur-md border-t border-slate-800 flex justify-around p-2 z-50">
          {navItems.filter(i => ['dashboard', 'new', 'roster'].includes(i.id)).map(item => {
             const Icon = item.IconComp;
