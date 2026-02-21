@@ -1,7 +1,8 @@
 import { useState, useEffect, useMemo } from 'react';
 import { 
-  Home, PlusCircle, BarChart2, Users, AlertTriangle, 
-  CheckCircle, Activity, Trash2, ShieldAlert, History as HistoryIcon
+  PlusCircle, BarChart2, Users, AlertTriangle, 
+  CheckCircle, Activity, Trash2, ShieldAlert, History as HistoryIcon,
+  ChevronRight, LayoutDashboard, Settings, UserPlus
 } from 'lucide-react';
 
 // --- FIREBASE IMPORTS ---
@@ -113,9 +114,9 @@ const MULTIPLIERS: Record<Discipline, number> = {
 
 const THEME = {
   bg: 'bg-slate-950',
-  card: 'bg-slate-900',
+  card: 'bg-slate-900/50 backdrop-blur-md border-slate-800/50',
   primary: '#E11D48',
-  primaryClass: 'bg-[#E11D48] hover:bg-rose-700 text-white',
+  primaryClass: 'bg-[#E11D48] hover:bg-rose-700 text-white shadow-lg shadow-rose-500/20',
   border: 'border-slate-800',
   textMuted: 'text-slate-400'
 };
@@ -194,50 +195,92 @@ const getAthleteMetrics = (athlete: Athlete, sessions: Session[]) => {
 };
 
 const getStatus = (acwr: number, recentPain: number) => {
-  if (recentPain >= 4) return { color: 'text-rose-500', bg: 'bg-rose-500/10', border: 'border-rose-500/50', label: 'ALARM: Ból', IconComp: ShieldAlert };
-  if (acwr >= 1.5) return { color: 'text-rose-500', bg: 'bg-rose-500/10', border: 'border-rose-500/50', label: 'ALARM: Przeciążenie', IconComp: AlertTriangle };
-  if (acwr > 1.3) return { color: 'text-amber-500', bg: 'bg-amber-500/10', border: 'border-amber-500/50', label: 'UWAGA: Wzrost obciążeń', IconComp: Activity };
-  return { color: 'text-emerald-500', bg: 'bg-emerald-500/10', border: 'border-emerald-500/50', label: 'OPTYMALNIE', IconComp: CheckCircle };
+  if (recentPain >= 4) return { color: 'text-rose-500', bg: 'bg-rose-500/10', border: 'border-rose-500/30', label: 'ALARM: Ból', IconComp: ShieldAlert };
+  if (acwr >= 1.5) return { color: 'text-rose-500', bg: 'bg-rose-500/10', border: 'border-rose-500/30', label: 'ALARM: Przeciążenie', IconComp: AlertTriangle };
+  if (acwr > 1.3) return { color: 'text-amber-500', bg: 'bg-amber-500/10', border: 'border-amber-500/30', label: 'UWAGA: Skok obciążeń', IconComp: Activity };
+  return { color: 'text-emerald-500', bg: 'bg-emerald-500/10', border: 'border-emerald-500/30', label: 'OPTYMALNIE', IconComp: CheckCircle };
 };
 
 // --- KOMPONENTY WIDOKÓW ---
 
 const Dashboard = ({ athletes, sessions, setView, setSelectedAthlete }: any) => (
-  <div className="space-y-6 animate-fade-in">
-    <div className="flex justify-between items-center">
-      <h2 className="text-2xl font-bold text-white">Pulpit Zespołu</h2>
-      <span className="text-[10px] text-emerald-400 bg-emerald-500/10 px-2 py-1 rounded border border-emerald-500/20 flex items-center">
-        <Activity className="w-3 h-3 mr-1" /> LIVE SYNC
-      </span>
+  <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+    <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+      <div>
+        <h2 className="text-3xl font-black text-white tracking-tight">Pulpit Zespołu</h2>
+        <p className="text-slate-400 text-sm">Monitorowanie w czasie rzeczywistym</p>
+      </div>
+      <div className="flex items-center gap-2 bg-slate-900 border border-slate-800 rounded-full px-4 py-1.5">
+        <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
+        <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-widest">Live Cloud Sync</span>
+      </div>
     </div>
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
       {athletes.length === 0 && (
-        <div className="col-span-full py-20 text-center border border-dashed border-slate-800 rounded-xl">
-          <Users className="w-12 h-12 text-slate-700 mx-auto mb-4" />
-          <p className="text-slate-500">Brak zawodników w bazie danych.</p>
-          <button onClick={() => setView('roster')} className="mt-4 text-[#E11D48] font-bold">Dodaj pierwszego zawodnika</button>
+        <div className="col-span-full py-32 text-center border-2 border-dashed border-slate-800 rounded-3xl bg-slate-900/20">
+          <div className="bg-slate-900 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6 border border-slate-800 shadow-xl">
+            <Users className="w-10 h-10 text-slate-700" />
+          </div>
+          <p className="text-slate-400 text-lg font-medium">Baza zawodników jest pusta</p>
+          <button onClick={() => setView('roster')} className="mt-6 px-6 py-2 bg-slate-800 hover:bg-slate-700 rounded-full text-white text-sm font-bold transition-all">Dodaj pierwszą osobę</button>
         </div>
       )}
+      
       {athletes.map((athlete: Athlete) => {
         const m = getAthleteMetrics(athlete, sessions);
         const s = getStatus(m.acwr, m.recentPain);
         const DisplayIcon = m.phvAlert ? AlertTriangle : s.IconComp;
 
         return (
-          <div key={athlete.id} onClick={() => { setSelectedAthlete(athlete.id); setView('analytics'); }} className={`${THEME.card} border ${m.phvAlert ? 'border-amber-500 shadow-lg shadow-amber-900/20' : s.border} rounded-xl p-5 cursor-pointer hover:scale-[1.02] transition-all`}>
-            <div className="flex justify-between items-start mb-4">
-              <div>
-                <h3 className="text-lg font-bold text-white">{athlete.firstName}</h3>
-                <p className="text-xs text-slate-500 uppercase tracking-widest">{athlete.profile}</p>
+          <div 
+            key={athlete.id} 
+            onClick={() => { setSelectedAthlete(athlete.id); setView('analytics'); }} 
+            className={`${THEME.card} border rounded-[2rem] p-6 cursor-pointer hover:border-rose-500/50 hover:bg-slate-900 transition-all duration-300 group relative overflow-hidden`}
+          >
+            {/* Dekoracja tła */}
+            <div className={`absolute -right-4 -top-4 w-24 h-24 rounded-full opacity-5 blur-2xl ${m.phvAlert ? 'bg-amber-500' : 'bg-rose-500'}`}></div>
+
+            <div className="flex justify-between items-start mb-6">
+              <div className="space-y-1">
+                <h3 className="text-xl font-bold text-white group-hover:text-rose-400 transition-colors">{athlete.firstName}</h3>
+                <div className="flex items-center gap-2">
+                  <span className="px-2 py-0.5 rounded text-[10px] font-black bg-slate-800 text-slate-300 uppercase tracking-tighter border border-slate-700">{athlete.profile}</span>
+                  <span className="text-[10px] text-slate-500 font-bold uppercase tracking-tighter">{athlete.age} lat</span>
+                </div>
               </div>
-              <div className={`p-2 rounded-lg ${m.phvAlert ? 'bg-amber-500/20 text-amber-500' : s.bg + ' ' + s.color}`}>
-                <DisplayIcon className={`w-5 h-5 ${m.phvAlert ? 'animate-pulse' : ''}`} />
+              <div className={`p-3 rounded-2xl ${m.phvAlert ? 'bg-amber-500/20 text-amber-500' : s.bg + ' ' + s.color}`}>
+                <DisplayIcon className={`w-6 h-6 ${m.phvAlert ? 'animate-bounce' : ''}`} />
               </div>
             </div>
-            {m.phvAlert && <div className="mb-4 text-[10px] bg-amber-500/10 text-amber-200 p-2 rounded border border-amber-500/20 leading-tight">⚠️ PHV: Skok wzrostu! Ogranicz dynamikę.</div>}
+
+            {m.phvAlert && (
+              <div className="mb-5 flex items-center gap-3 bg-amber-500/10 text-amber-200 p-3 rounded-2xl border border-amber-500/20 text-[11px] font-medium leading-tight">
+                <AlertTriangle className="w-4 h-4 flex-shrink-0" />
+                <span>PHV Alert: Gwałtowny skok wzrostu. Zredukuj obciążenia dynamiczne.</span>
+              </div>
+            )}
+
             <div className="grid grid-cols-2 gap-4">
-              <div><p className="text-[10px] text-slate-500 uppercase">ACWR</p><p className={`text-xl font-bold ${s.color}`}>{m.acwr}</p></div>
-              <div><p className="text-[10px] text-slate-500 uppercase">Ból</p><p className={`text-xl font-bold ${m.recentPain >= 4 ? 'text-rose-500' : 'text-slate-200'}`}>{m.recentPain}/10</p></div>
+              <div className="bg-slate-950/50 p-4 rounded-2xl border border-slate-800/50">
+                <p className="text-[10px] text-slate-500 uppercase font-black tracking-widest mb-1">ACWR</p>
+                <div className="flex items-end gap-1">
+                  <p className={`text-2xl font-black tracking-tighter ${s.color}`}>{m.acwr}</p>
+                  <span className="text-[10px] text-slate-600 mb-1">ratio</span>
+                </div>
+              </div>
+              <div className="bg-slate-950/50 p-4 rounded-2xl border border-slate-800/50">
+                <p className="text-[10px] text-slate-500 uppercase font-black tracking-widest mb-1">Ból</p>
+                <div className="flex items-end gap-1">
+                  <p className={`text-2xl font-black tracking-tighter ${m.recentPain >= 4 ? 'text-rose-500' : 'text-slate-200'}`}>{m.recentPain}</p>
+                  <span className="text-[10px] text-slate-600 mb-1">/10</span>
+                </div>
+              </div>
+            </div>
+            
+            <div className="mt-6 flex items-center justify-between text-[10px] text-slate-500 font-bold uppercase tracking-widest">
+              <span>Szczegóły profilu</span>
+              <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
             </div>
           </div>
         );
@@ -282,43 +325,98 @@ const NewTraining = ({ athletes, dbAddSession, setView }: any) => {
   };
 
   return (
-    <div className="max-w-2xl mx-auto space-y-6">
-      <h2 className="text-2xl font-bold text-white">Rejestracja Treningu</h2>
+    <div className="max-w-3xl mx-auto space-y-8 pb-12 animate-in fade-in duration-500">
+      <div className="text-center">
+        <h2 className="text-3xl font-black text-white">Rejestracja Treningu</h2>
+        <p className="text-slate-400">Zbierz dane po zakończonej jednostce</p>
+      </div>
+
+      <div className="flex justify-center mb-8">
+        <div className="flex items-center gap-4 bg-slate-900 p-2 rounded-full border border-slate-800">
+          <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs transition-colors ${step === 1 ? 'bg-rose-500 text-white' : 'bg-slate-800 text-slate-500'}`}>1</div>
+          <div className="w-12 h-px bg-slate-800"></div>
+          <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs transition-colors ${step === 2 ? 'bg-rose-500 text-white' : 'bg-slate-800 text-slate-500'}`}>2</div>
+        </div>
+      </div>
+
       {step === 1 ? (
-        <div className={`${THEME.card} p-6 rounded-xl border border-slate-800 space-y-4`}>
-          <div className="grid grid-cols-2 gap-4">
-            <div><label className="block text-xs text-slate-500 mb-1">Data</label><input type="date" value={date} onChange={e => setDate(e.target.value)} className="w-full bg-slate-950 border border-slate-800 rounded p-2 text-white" /></div>
-            <div><label className="block text-xs text-slate-500 mb-1">Czas (min)</label><input type="number" value={duration} onChange={e => setDuration(Number(e.target.value))} className="w-full bg-slate-950 border border-slate-800 rounded p-2 text-white" /></div>
+        <div className="bg-slate-900 border border-slate-800 p-8 rounded-[2.5rem] shadow-2xl space-y-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-2">
+              <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-2">Data Treningu</label>
+              <input type="date" value={date} onChange={e => setDate(e.target.value)} className="w-full bg-slate-950 border border-slate-800 rounded-2xl p-4 text-white focus:outline-none focus:border-rose-500 transition-colors" />
+            </div>
+            <div className="space-y-2">
+              <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-2">Czas Trwania (min)</label>
+              <input type="number" value={duration} onChange={e => setDuration(Number(e.target.value))} className="w-full bg-slate-950 border border-slate-800 rounded-2xl p-4 text-white focus:outline-none focus:border-rose-500 transition-colors" />
+            </div>
           </div>
-          <div>
-            <label className="block text-xs text-slate-500 mb-2">Dyscyplina</label>
-            <div className="grid grid-cols-3 gap-2">
-              {['PŁYWANIE', 'ROWER', 'BIEG', 'FUNKCJONALNY', 'PLIO/MOC'].map(d => (
-                <button key={d} onClick={() => setDiscipline(d as any)} className={`py-2 rounded text-xs border ${discipline === d ? 'bg-[#E11D48] border-[#E11D48] text-white' : 'border-slate-800 text-slate-400'}`}>{d}</button>
+          
+          <div className="space-y-4">
+            <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-2">Główna Dyscyplina</label>
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
+              {Object.keys(MULTIPLIERS).map(d => (
+                <button 
+                  key={d} 
+                  onClick={() => setDiscipline(d as any)} 
+                  className={`py-4 rounded-2xl text-[10px] font-black uppercase tracking-tighter border transition-all ${discipline === d ? 'bg-rose-500 border-rose-500 text-white shadow-lg shadow-rose-500/20' : 'bg-slate-950 border-slate-800 text-slate-500 hover:border-slate-700'}`}
+                >
+                  {d}
+                </button>
               ))}
             </div>
           </div>
-          <div><label className="block text-xs text-slate-500 mb-1">Trener</label><select value={leadCoach} onChange={e => setLeadCoach(e.target.value)} className="w-full bg-slate-950 border border-slate-800 rounded p-2 text-white"><option>Kacper</option><option>Hubert</option><option>Piotr</option><option>Adrian</option></select></div>
-          <button onClick={() => setStep(2)} className="w-full py-3 bg-[#E11D48] rounded-xl font-bold text-white">Przejdź do obecności</button>
+
+          <div className="space-y-2">
+            <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-2">Trener Prowadzący</label>
+            <select value={leadCoach} onChange={e => setLeadCoach(e.target.value)} className="w-full bg-slate-950 border border-slate-800 rounded-2xl p-4 text-white focus:outline-none focus:border-rose-500 transition-colors appearance-none">
+              <option>Kacper</option><option>Hubert</option><option>Piotr</option><option>Adrian</option>
+            </select>
+          </div>
+
+          <button onClick={() => setStep(2)} className="w-full py-5 bg-rose-500 hover:bg-rose-600 rounded-2xl font-black text-white uppercase tracking-widest shadow-xl shadow-rose-500/20 transition-all flex items-center justify-center gap-3">
+            Dalej: Obecność i RPE <ChevronRight className="w-5 h-5" />
+          </button>
         </div>
       ) : (
         <div className="space-y-4">
           {athletes.map((a: any) => (
-            <div key={a.id} className={`${THEME.card} p-4 rounded-xl border border-slate-800 flex flex-col space-y-3`}>
+            <div key={a.id} className="bg-slate-900 border border-slate-800 p-6 rounded-3xl space-y-4 shadow-xl">
               <div className="flex justify-between items-center">
-                <span className="font-bold text-white">{a.firstName}</span>
-                <button onClick={() => setResults({...results, [a.id]: {...results[a.id], isPresent: !results[a.id].isPresent}})} className={`px-3 py-1 rounded text-xs ${results[a.id].isPresent ? 'bg-emerald-500/20 text-emerald-500' : 'bg-rose-500/20 text-rose-500'}`}>{results[a.id].isPresent ? 'Obecny' : 'Nieobecny'}</button>
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center font-bold text-rose-500 border border-slate-700">{a.firstName[0]}</div>
+                  <span className="font-bold text-white text-lg">{a.firstName}</span>
+                </div>
+                <button 
+                  onClick={() => setResults({...results, [a.id]: {...results[a.id], isPresent: !results[a.id].isPresent}})} 
+                  className={`px-6 py-2 rounded-full text-[10px] font-black uppercase tracking-widest transition-all ${results[a.id].isPresent ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20' : 'bg-rose-500/10 text-rose-500 border border-rose-500/20'}`}
+                >
+                  {results[a.id].isPresent ? 'Obecny' : 'Nieobecny'}
+                </button>
               </div>
+              
               {results[a.id].isPresent && (
-                <div className="grid grid-cols-3 gap-4">
-                  <div><label className="text-[10px] text-slate-500">RPE (1-10)</label><input type="number" value={results[a.id].rpe} onChange={e => setResults({...results, [a.id]: {...results[a.id], rpe: Number(e.target.value)}})} className="w-full bg-slate-950 border border-slate-800 rounded p-1 text-white" /></div>
-                  <div><label className="text-[10px] text-slate-500">Ból (0-10)</label><input type="number" value={results[a.id].pain} onChange={e => setResults({...results, [a.id]: {...results[a.id], pain: Number(e.target.value)}})} className="w-full bg-slate-950 border border-slate-800 rounded p-1 text-white" /></div>
-                  <div><label className="text-[10px] text-slate-500">Chęci (1-10)</label><input type="number" value={results[a.id].motivation} onChange={e => setResults({...results, [a.id]: {...results[a.id], motivation: Number(e.target.value)}})} className="w-full bg-slate-950 border border-slate-800 rounded p-1 text-white" /></div>
+                <div className="grid grid-cols-3 gap-3 animate-in fade-in zoom-in-95 duration-300">
+                  <div className="space-y-1">
+                    <label className="text-[9px] font-black text-slate-500 uppercase ml-1">RPE (1-10)</label>
+                    <input type="number" min="1" max="10" value={results[a.id].rpe} onChange={e => setResults({...results, [a.id]: {...results[a.id], rpe: Number(e.target.value)}})} className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-white text-center font-bold" />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[9px] font-black text-slate-500 uppercase ml-1">Ból (0-10)</label>
+                    <input type="number" min="0" max="10" value={results[a.id].pain} onChange={e => setResults({...results, [a.id]: {...results[a.id], pain: Number(e.target.value)}})} className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-white text-center font-bold" />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[9px] font-black text-slate-500 uppercase ml-1">Chęci (1-10)</label>
+                    <input type="number" min="1" max="10" value={results[a.id].motivation} onChange={e => setResults({...results, [a.id]: {...results[a.id], motivation: Number(e.target.value)}})} className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-white text-center font-bold" />
+                  </div>
                 </div>
               )}
             </div>
           ))}
-          <button onClick={handleSave} className="w-full py-4 bg-[#E11D48] rounded-xl font-bold text-white">Zapisz Trening w Chmurze</button>
+          <div className="flex gap-4 mt-8">
+            <button onClick={() => setStep(1)} className="flex-1 py-5 bg-slate-800 hover:bg-slate-700 rounded-2xl font-black text-white uppercase tracking-widest transition-all">Wstecz</button>
+            <button onClick={handleSave} className="flex-[2] py-5 bg-emerald-600 hover:bg-emerald-500 rounded-2xl font-black text-white uppercase tracking-widest shadow-xl shadow-emerald-500/20 transition-all">Zapisz sesję w chmurze</button>
+          </div>
         </div>
       )}
     </div>
@@ -342,19 +440,47 @@ const Roster = ({ athletes, dbAddAthlete, dbDeleteAthlete }: any) => {
   };
 
   return (
-    <div className="space-y-6">
-      <h2 className="text-2xl font-bold text-white">Kadra Zespołu</h2>
-      <div className={`${THEME.card} p-6 rounded-xl border border-slate-800 grid grid-cols-2 md:grid-cols-4 gap-4 items-end`}>
-        <div><label className="text-xs text-slate-500">Imię</label><input value={name} onChange={e => setName(e.target.value)} className="w-full bg-slate-950 border border-slate-800 rounded p-2 text-white" /></div>
-        <div><label className="text-xs text-slate-500">Grupa</label><select value={profile} onChange={e => setProfile(e.target.value as any)} className="w-full bg-slate-950 border border-slate-800 rounded p-2 text-white"><option>PRO</option><option>BASE</option></select></div>
-        <div><label className="text-xs text-slate-500">Wzrost (cm)</label><input type="number" value={height} onChange={e => setHeight(Number(e.target.value))} className="w-full bg-slate-950 border border-slate-800 rounded p-2 text-white" /></div>
-        <button onClick={handleAdd} className="bg-[#E11D48] py-2.5 rounded font-bold text-white">Dodaj</button>
+    <div className="max-w-4xl mx-auto space-y-10 animate-in fade-in duration-500">
+      <div className="flex justify-between items-end">
+        <div>
+          <h2 className="text-3xl font-black text-white tracking-tight">Zarządzanie Kadrą</h2>
+          <p className="text-slate-400">Dodawaj i edytuj profile zawodników</p>
+        </div>
       </div>
+
+      <div className="bg-slate-900 border border-slate-800 p-8 rounded-[2.5rem] shadow-2xl grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6 items-end">
+        <div className="space-y-2">
+          <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-2">Imię zawodnika</label>
+          <input value={name} onChange={e => setName(e.target.value)} placeholder="Wpisz imię..." className="w-full bg-slate-950 border border-slate-800 rounded-2xl p-4 text-white focus:outline-none focus:border-rose-500 transition-colors" />
+        </div>
+        <div className="space-y-2">
+          <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-2">Grupa treningowa</label>
+          <select value={profile} onChange={e => setProfile(e.target.value as any)} className="w-full bg-slate-950 border border-slate-800 rounded-2xl p-4 text-white focus:outline-none focus:border-rose-500 transition-colors appearance-none">
+            <option>PRO</option><option>BASE</option>
+          </select>
+        </div>
+        <div className="space-y-2">
+          <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-2">Aktualny wzrost (cm)</label>
+          <input type="number" value={height} onChange={e => setHeight(Number(e.target.value))} className="w-full bg-slate-950 border border-slate-800 rounded-2xl p-4 text-white focus:outline-none focus:border-rose-500 transition-colors" />
+        </div>
+        <button onClick={handleAdd} className="w-full py-4 bg-rose-500 hover:bg-rose-600 rounded-2xl font-black text-white uppercase tracking-widest shadow-xl shadow-rose-500/20 transition-all flex items-center justify-center gap-2">
+          <UserPlus className="w-5 h-5" /> Dodaj
+        </button>
+      </div>
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {athletes.map((a: any) => (
-          <div key={a.id} className={`${THEME.card} p-4 rounded-xl border border-slate-800 flex justify-between items-center`}>
-            <div><span className="font-bold text-white">{a.firstName}</span><span className="ml-3 text-xs text-slate-500">{a.profile}</span></div>
-            <button onClick={() => dbDeleteAthlete(a.id)} className="text-slate-600 hover:text-rose-500"><Trash2 className="w-4 h-4" /></button>
+          <div key={a.id} className="bg-slate-900/40 border border-slate-800 p-5 rounded-3xl flex justify-between items-center group hover:bg-slate-900 transition-all">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-2xl bg-slate-800 flex items-center justify-center font-bold text-rose-500 border border-slate-700 transition-transform group-hover:scale-110">{a.firstName[0]}</div>
+              <div>
+                <p className="font-bold text-white text-lg leading-none mb-1">{a.firstName}</p>
+                <p className="text-[10px] text-slate-500 uppercase font-black tracking-widest">{a.profile} • {a.joinDate}</p>
+              </div>
+            </div>
+            <button onClick={() => dbDeleteAthlete(a.id)} className="p-3 text-slate-600 hover:text-rose-500 hover:bg-rose-500/10 rounded-2xl transition-all opacity-0 group-hover:opacity-100">
+              <Trash2 className="w-5 h-5" />
+            </button>
           </div>
         ))}
       </div>
@@ -426,61 +552,94 @@ export default function App() {
 
   if (!isLoaded || !user) {
     return (
-      <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center text-white font-black animate-pulse">
-        <Activity className="w-12 h-12 text-[#E11D48] mb-4 animate-spin" />
-        <h1 className="text-2xl tracking-tighter"><span className="text-[#E11D48]">TRI</span> POP PRO</h1>
-        <p className="mt-4 text-xs text-slate-500 font-medium">ŁĄCZENIE Z CHMURĄ...</p>
+      <div className="min-h-screen bg-[#020617] flex flex-col items-center justify-center text-white font-black animate-pulse">
+        <Activity className="w-16 h-16 text-[#E11D48] mb-6 animate-spin" />
+        <h1 className="text-3xl tracking-tighter"><span className="text-[#E11D48]">TRI</span> POP PRO</h1>
+        <p className="mt-4 text-[10px] text-slate-500 font-bold uppercase tracking-[0.3em] opacity-50">LTAD Monitor System</p>
       </div>
     );
   }
 
   const navItems = [
-    { id: 'dashboard', label: 'Pulpit', IconComp: Home },
-    { id: 'new', label: 'Nowy Trening', IconComp: PlusCircle },
-    { id: 'history', label: 'Historia', IconComp: HistoryIcon },
-    { id: 'analytics', label: 'Analiza', IconComp: BarChart2 },
-    { id: 'roster', label: 'Kadra', IconComp: Users }
+    { id: 'dashboard', label: 'Pulpit', IconComp: LayoutDashboard },
+    { id: 'new', label: 'Dodaj Trening', IconComp: PlusCircle },
+    { id: 'history', label: 'Baza Danych', IconComp: HistoryIcon },
+    { id: 'analytics', label: 'Analiza ACWR', IconComp: BarChart2 },
+    { id: 'roster', label: 'Zawodnicy', IconComp: Users }
   ];
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-200 pb-20 md:pb-0 md:pl-64">
+    <div className="min-h-screen bg-[#020617] text-slate-200 pb-28 md:pb-0 md:pl-72 selection:bg-rose-500/30 selection:text-rose-200">
+      
+      {/* Dekoracyjne Światło w tle */}
+      <div className="fixed top-0 right-0 w-[500px] h-[500px] bg-rose-500/5 rounded-full blur-[120px] -z-10"></div>
+      <div className="fixed bottom-0 left-0 w-[500px] h-[500px] bg-blue-500/5 rounded-full blur-[120px] -z-10"></div>
+
       {/* Sidebar Desktop */}
-      <aside className="hidden md:flex flex-col fixed inset-y-0 left-0 w-64 bg-slate-950 border-r border-slate-800 p-6">
-        <h1 className="text-xl font-black text-white mb-8 tracking-tighter"><span className="text-[#E11D48]">TRI</span> POP PRO</h1>
-        <nav className="space-y-2">
+      <aside className="hidden md:flex flex-col fixed inset-y-0 left-0 w-72 bg-slate-950/50 backdrop-blur-xl border-r border-slate-800/50 p-8 z-50">
+        <div className="mb-12">
+          <h1 className="text-3xl font-black text-white tracking-tighter flex items-center gap-2">
+            <span className="w-8 h-8 bg-rose-500 rounded-lg flex items-center justify-center text-xs">TP</span>
+            <span><span className="text-[#E11D48]">TRI</span> POP PRO</span>
+          </h1>
+          <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mt-2 ml-10">Klubowy Monitor Obciążeń</p>
+        </div>
+
+        <nav className="flex-1 space-y-2">
           {navItems.map((item) => {
             const Icon = item.IconComp;
             return (
-              <button key={item.id} onClick={() => setView(item.id as any)} className={`w-full flex items-center px-4 py-3 rounded-xl transition-all ${view === item.id ? 'bg-[#E11D48] text-white' : 'text-slate-400 hover:bg-slate-900'}`}>
-                <Icon className="w-5 h-5 mr-3" />
-                <span className="font-medium">{item.label}</span>
+              <button 
+                key={item.id} 
+                onClick={() => setView(item.id as any)} 
+                className={`w-full flex items-center px-5 py-4 rounded-2xl transition-all duration-300 group ${view === item.id ? 'bg-rose-500 text-white shadow-lg shadow-rose-500/20' : 'text-slate-400 hover:bg-slate-900 hover:text-white'}`}
+              >
+                <Icon className={`w-5 h-5 mr-4 transition-transform ${view === item.id ? 'scale-110' : 'group-hover:scale-110'}`} />
+                <span className="font-bold text-sm">{item.label}</span>
+                {view === item.id && <ChevronRight className="w-4 h-4 ml-auto" />}
               </button>
             );
           })}
         </nav>
+
+        <div className="mt-auto pt-8 border-t border-slate-800/50">
+          <button className="w-full flex items-center px-5 py-4 rounded-2xl text-slate-500 hover:bg-slate-900 hover:text-white transition-all">
+            <Settings className="w-5 h-5 mr-4" />
+            <span className="font-bold text-sm">Ustawienia</span>
+          </button>
+        </div>
       </aside>
 
       {/* Main Content */}
-      <main className="p-4 md:p-8 max-w-7xl mx-auto">
+      <main className="relative p-6 md:p-12 max-w-7xl mx-auto min-h-screen">
         {view === 'dashboard' && <Dashboard athletes={athletes} sessions={sessions} setView={setView} setSelectedAthlete={() => {}} />}
         {view === 'new' && <NewTraining athletes={athletes} dbAddSession={dbAddSession} setView={setView} />}
         {view === 'roster' && <Roster athletes={athletes} dbAddAthlete={dbAddAthlete} dbDeleteAthlete={dbDeleteAthlete} />}
         
         {(view === 'history' || view === 'analytics') && (
-           <div className="text-center py-20 text-slate-500 border border-dashed border-slate-800 rounded-2xl">
-              <Activity className="w-12 h-12 mx-auto mb-4 opacity-20" />
-              <p>Moduł {view === 'history' ? 'Historii' : 'Analizy'} wkrótce...</p>
-              <button onClick={() => setView('dashboard')} className="mt-4 text-[#E11D48] underline">Wróć do pulpitu</button>
+           <div className="flex flex-col items-center justify-center py-32 text-center">
+              <div className="w-20 h-20 bg-slate-900 rounded-3xl flex items-center justify-center mb-6 border border-slate-800 shadow-2xl">
+                <Activity className="w-10 h-10 text-rose-500 animate-pulse" />
+              </div>
+              <h3 className="text-xl font-bold text-white mb-2">Moduł w budowie</h3>
+              <p className="text-slate-500 max-w-xs mx-auto">Pracujemy nad zaawansowanymi wykresami ACWR. Twoje dane są już zbierane w bezpiecznej bazie Firebase.</p>
+              <button onClick={() => setView('dashboard')} className="mt-8 px-8 py-3 bg-slate-800 hover:bg-slate-700 rounded-full text-white font-bold transition-all">Wróć do Pulpitu</button>
            </div>
         )}
       </main>
 
       {/* Bottom Nav Mobile */}
-      <nav className="md:hidden fixed bottom-0 inset-x-0 bg-slate-950/90 backdrop-blur-md border-t border-slate-800 flex justify-around p-2 z-50">
+      <nav className="md:hidden fixed bottom-6 inset-x-6 bg-slate-950/80 backdrop-blur-2xl border border-slate-800/50 flex justify-around p-4 rounded-[2rem] shadow-2xl z-50">
          {navItems.filter(i => ['dashboard', 'new', 'roster'].includes(i.id)).map(item => {
             const Icon = item.IconComp;
             return (
-              <button key={item.id} onClick={() => setView(item.id as any)} className={`p-2 transition-colors ${view === item.id ? 'text-[#E11D48]' : 'text-slate-500'}`}><Icon /></button>
+              <button 
+                key={item.id}
+                onClick={() => setView(item.id as any)} 
+                className={`p-3 rounded-2xl transition-all ${view === item.id ? 'bg-rose-500 text-white shadow-lg shadow-rose-500/20 scale-110' : 'text-slate-500'}`}
+              >
+                <Icon className="w-6 h-6" />
+              </button>
             );
          })}
       </nav>
